@@ -7,7 +7,7 @@ import {
 import { useStore, fmtDate, stampNow } from '../data/store'
 import { TODAY, Visit, nowHM } from '../data/seed'
 import { DAY_NAMES, checkCaregiver, dayOfWeek, liveState, minutesLate } from '../data/schedule'
-import { plansFor } from '../data/clients'
+import { planForVisit } from '../data/clients'
 import { actualMins, hrs, mins, plannedMins, serviceFlags } from '../data/review'
 import { AlertBanner, Avatar, Button, CardHead, Chip, ChipTone, EmptyState, Field, Input, Modal, ReasonDialog, Textarea } from '../components/ui'
 
@@ -32,7 +32,7 @@ export default function VisitDetail() {
 
   const c = s.client(v.clientId)!
   const g = s.caregiver(v.caregiverId)
-  const plan = plansFor(v.clientId, s.carePlans).current
+  const plan = planForVisit(v, s.carePlans)
   const editable = v.date >= TODAY && ['Scheduled', 'Unassigned'].includes(v.status)
   const live = v.date === TODAY && !v.approval ? liveState(v) : null
   const flags = serviceFlags(v, plan, s.rules.lateArrivalMins)
@@ -88,7 +88,7 @@ export default function VisitDetail() {
       {v.status === 'Cancelled' && <AlertBanner tone="info" title="This visit was cancelled">{v.cancelReason ? `Reason: ${v.cancelReason}.` : ''} It stays in the history.</AlertBanner>}
       {v.approval === 'To review' && stops && <AlertBanner tone="danger" title="Can’t approve yet">The caregiver didn’t check out. Ask {g?.name.split(' ')[0]} when they left, then use “Correct times”.</AlertBanner>}
       {v.approval === 'To review' && !stops && flags.length === 0 && <AlertBanner tone="success" title="Matches the plan">Times, place and tasks all match. You can approve it.</AlertBanner>}
-      {v.approval === 'Sent back' && v.returned && <AlertBanner tone="warning" title="Sent back to fix">{v.returned.by} · {v.returned.at}: “{v.returned.reason}” {c.coordinator} is checking with the caregiver. You can also correct it yourself.</AlertBanner>}
+      {v.approval === 'Sent back' && v.returned && <AlertBanner tone="warning" title="Sent back to fix">{v.returned.by} · {v.returned.at}: “{v.returned.reason}” {g?.name ?? 'The caregiver'} corrects it in the app and sends it again. You can also correct it yourself.</AlertBanner>}
       {v.approval === 'Approved' && <AlertBanner tone="success" title={`Approved by ${v.approvedBy} · ${v.approvedAt}`}>{v.billing ? 'Finance has already invoiced this visit. Changes now go to Finance as an adjustment — the approved record stays as it is.' : 'Ready for billing and timesheets. You can still correct it — every change is recorded.'}</AlertBanner>}
       {v.adjustment && <AlertBanner tone="info" title="Adjustment sent to Finance">{v.adjustment.before} → {v.adjustment.after}. Reason: “{v.adjustment.reason}” ({v.adjustment.by} · {v.adjustment.at})</AlertBanner>}
 
@@ -182,9 +182,9 @@ export default function VisitDetail() {
         </div>
       </div>
       {act === 'approve' && <ApproveModal v={v} flags={flags.map(f => f.title)} onClose={() => setAct(null)} />}
-      {act === 'return' && <ReasonDialog title="Send back to fix" text={`${c.coordinator} checks with ${g?.name ?? 'the caregiver'} and corrects the record. It comes back to you when it’s fixed.`} label="What needs fixing?" confirm="Send back" danger placeholder="For example: check-out time looks wrong, please confirm with the caregiver" onClose={() => setAct(null)} onConfirm={reason => {
+      {act === 'return' && <ReasonDialog title="Send back to fix" text={`${g?.name ?? 'The caregiver'} corrects it in the app and sends it again. ${c.coordinator} is told too. It comes back to you when it’s fixed.`} label="What needs fixing?" confirm="Send back" danger placeholder="For example: check-out time looks wrong, please confirm with the caregiver" onClose={() => setAct(null)} onConfirm={reason => {
         s.setVisits(x => x.map(y => y.id === v.id ? { ...y, approval: 'Sent back', returned: { reason, by: s.me.name, at: stampNow() } } : y))
-        s.log({ type: 'Visit approval', action: 'Sent a visit back to fix', record, reason }); s.toast(`Sent back. ${c.coordinator} has been told.`); setAct(null)
+        s.log({ type: 'Visit approval', action: 'Sent a visit back to fix', record, reason }); s.toast(`Sent back to ${g?.name ?? 'the caregiver'} to fix. ${c.coordinator} has been told.`); setAct(null)
       }} />}
       {(act === 'correct' || act === 'adjust') && <CorrectModal v={v} adjust={act === 'adjust'} onClose={() => setAct(null)} />}
       {act === 'keep' && <ReasonDialog title={`Keep ${g?.name} on this visit?`} text={`${g?.name} is not ready to work: ${g?.issue?.toLowerCase()}. Only a ${s.rules.overrideRoles.join(' or ')} can make this exception.`} label="Why is this safe?" confirm="Make exception" placeholder="For example: certificate renewed yesterday, HR is uploading it today" onClose={() => setAct(null)} onConfirm={keepAnyway} />}

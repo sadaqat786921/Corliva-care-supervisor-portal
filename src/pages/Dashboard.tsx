@@ -5,7 +5,7 @@ import {
 import { useStore, fmtDate } from '../data/store'
 import { TODAY, addDays } from '../data/seed'
 import { coverQueue, liveState } from '../data/schedule'
-import { plansFor, reviewOverdue } from '../data/clients'
+import { planForVisit, plansFor, reviewOverdue } from '../data/clients'
 import { serviceFlags } from '../data/review'
 import { Button, CardHead, Chip, ChipTone, PageHead, StatTile } from '../components/ui'
 import { docExpired } from '../components/CheckActions'
@@ -22,7 +22,7 @@ export default function Dashboard() {
   const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const first = s.me.name.split(' ')[0]
 
-  const toReview = s.visits.filter(v => s.inBranch(v.branch) && v.approval === 'To review').map(v => ({ v, flags: serviceFlags(v, plansFor(v.clientId, s.carePlans).current, s.rules.lateArrivalMins) }))
+  const toReview = s.visits.filter(v => s.inBranch(v.branch) && v.approval === 'To review').map(v => ({ v, flags: serviceFlags(v, planForVisit(v, s.carePlans), s.rules.lateArrivalMins) }))
   const flagged = toReview.filter(x => x.flags.length)
   const clientsHere = s.clients.filter(c => s.inBranch(c.branch) && c.status !== 'Discharged').map(c => ({ c, ...plansFor(c.id, s.carePlans) }))
   const plansWaiting = clientsHere.filter(x => x.working?.status === 'Awaiting review')

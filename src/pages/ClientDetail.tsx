@@ -5,7 +5,7 @@ import {
 } from 'lucide-react'
 import { useStore, fmtDate } from '../data/store'
 import { CarePlan, Client, TODAY } from '../data/seed'
-import { plansFor, reviewOverdue } from '../data/clients'
+import { planForVisit, plansFor, reviewOverdue } from '../data/clients'
 import { serviceFlags } from '../data/review'
 import { AlertBanner, Avatar, Button, CardHead, Chip, ChipTone, EmptyState, Tabs } from '../components/ui'
 import { DocCheckModal, docExpired, docTone, expiringSoon } from '../components/CheckActions'
@@ -205,7 +205,6 @@ function VisitsTab({ c }: { c: Client }) {
   const s = useStore()
   const nav = useNavigate()
   const [show, setShow] = useState<'upcoming' | 'past'>('upcoming')
-  const plan = plansFor(c.id, s.carePlans).current
   const list = useMemo(() => s.visits.filter(v => v.clientId === c.id).filter(v => show === 'upcoming' ? v.date >= TODAY && v.status !== 'Completed' : v.date < TODAY || v.status === 'Completed')
     .sort((a, b) => show === 'upcoming' ? (a.date + a.start).localeCompare(b.date + b.start) : (b.date + b.start).localeCompare(a.date + a.start)), [s.visits, c.id, show])
   const tone = (st: string): ChipTone => st === 'Completed' ? 'success' : st === 'Unassigned' ? 'danger' : st === 'Cancelled' ? 'neutral' : 'info'
@@ -216,7 +215,7 @@ function VisitsTab({ c }: { c: Client }) {
       {list.length === 0 ? <EmptyState icon={CalendarDays} tone="neutral" title={show === 'upcoming' ? 'No visits planned' : 'No past visits yet'} text={show === 'upcoming' ? `${c.coordinator} plans the visits.` : 'Finished visits appear here.'} /> :
         <div className="table-wrap"><table className="tbl">
           <thead><tr><th>Date</th><th>Planned</th><th>Service</th><th>Caregiver</th><th>Status</th>{show === 'past' && <th>Your check</th>}</tr></thead>
-          <tbody>{list.map(v => { const fl = serviceFlags(v, plan, s.rules.lateArrivalMins); return (
+          <tbody>{list.map(v => { const fl = serviceFlags(v, planForVisit(v, s.carePlans), s.rules.lateArrivalMins); return (
             <tr key={v.id} className="clickable" onClick={() => nav(`/visits/${v.id}?from=/clients/${c.id}`)}>
               <td>{v.date === TODAY ? 'Today' : fmtDate(v.date)}</td><td>{v.start}–{v.end}</td><td>{v.service}</td>
               <td>{s.caregiver(v.caregiverId)?.name ?? <span style={{ color: 'var(--status-danger)' }}>None yet</span>}</td>
@@ -224,7 +223,7 @@ function VisitsTab({ c }: { c: Client }) {
               {show === 'past' && <td>{v.approval ? <Chip tone={v.approval === 'Approved' ? 'success' : v.approval === 'Sent back' ? 'danger' : 'warning'}>{v.approval}</Chip> : <span className="t-muted">—</span>}{v.approval === 'To review' && fl.length > 0 && <div className="t-caption" style={{ color: 'var(--status-warning)' }}>{fl.length} thing{fl.length > 1 ? 's' : ''} to look at</div>}</td>}
             </tr>) })}</tbody>
         </table></div>}
-      {plan && <div className="card-body t-caption t-muted row" style={{ gap: 6 }}><ClipboardList size={12} />Tasks are checked against care plan version {plan.version}.</div>}
+      <div className="card-body t-caption t-muted row" style={{ gap: 6 }}><ClipboardList size={12} />Each visit is checked against the care plan that applied on that day.</div>
     </div>
   )
 }

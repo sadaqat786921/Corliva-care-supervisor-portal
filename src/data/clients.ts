@@ -20,6 +20,10 @@ export function plansFor(clientId: string, plans: CarePlan[]) {
   return { current: mine.find(p => p.status === 'Approved'), working: mine.find(p => ['Draft', 'Awaiting review', 'Changes requested'].includes(p.status)), all: mine }
 }
 
+/** The approved plan that applied on the day of a visit (CP-07: later versions never change what applied to a finished visit). */
+export function planForVisit(v: { clientId: string; date: string }, plans: CarePlan[]) {
+  return plans.filter(p => p.clientId === v.clientId && (p.status === 'Approved' || p.status === 'Superseded') && (p.effectiveDate ?? '') <= v.date).sort((a, b) => b.version - a.version)[0] ?? plansFor(v.clientId, plans).current
+}
 export const reviewDue = (p: CarePlan | undefined) => !!p && !!p.reviewDate && p.reviewDate <= addDaysIso(14)
 export const reviewOverdue = (p: CarePlan | undefined) => !!p && !!p.reviewDate && p.reviewDate < TODAY
 function addDaysIso(n: number) { const d = new Date(); d.setDate(d.getDate() + n); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }

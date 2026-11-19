@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { CheckCircle2, ChevronRight, ClipboardCheck, TriangleAlert, Ban } from 'lucide-react'
 import { useStore, fmtDate, stampNow } from '../data/store'
 import { TODAY, Visit } from '../data/seed'
-import { plansFor } from '../data/clients'
+import { planForVisit } from '../data/clients'
 import { actualMins, hrs, plannedMins, serviceFlags } from '../data/review'
 import { AlertBanner, Button, Chip, ConfirmDialog, EmptyState, PageHead, Pager, Tabs, usePaged } from '../components/ui'
 
@@ -17,7 +17,7 @@ export default function Approvals() {
   const [only, setOnly] = useState('All')
   const [picked, setPicked] = useState<string[]>([])
   const [confirm, setConfirm] = useState(false)
-  const flagsOf = (v: Visit) => serviceFlags(v, plansFor(v.clientId, s.carePlans).current, s.rules.lateArrivalMins)
+  const flagsOf = (v: Visit) => serviceFlags(v, planForVisit(v, s.carePlans), s.rules.lateArrivalMins)
   const all = useMemo(() => s.visits.filter(v => s.inBranch(v.branch) && v.approval).map(v => ({ v, flags: flagsOf(v) })), [s.visits, s.carePlans, s.branch])
   const rows = all.filter(x => x.v.approval === tab && (only === 'All' || (only === 'With something to look at' ? x.flags.length > 0 : x.flags.length === 0)))
     .sort((a, b) => tab === 'To review' ? (b.flags.length - a.flags.length) || (a.v.date + a.v.start).localeCompare(b.v.date + b.v.start) : (b.v.date + b.v.start).localeCompare(a.v.date + a.v.start))
@@ -48,7 +48,7 @@ export default function Approvals() {
             <Button size="sm" icon={CheckCircle2} disabled={!picked.length} onClick={() => setConfirm(true)}>Approve selected</Button>
           </>}
         </div>
-        {tab === 'Sent back' && rows.length > 0 && <div className="card-body" style={{ paddingBottom: 0 }}><AlertBanner tone="info" title="Waiting for a fix">The coordinator checks with the caregiver and corrects the record. It comes back to “To review” when it’s fixed.</AlertBanner></div>}
+        {tab === 'Sent back' && rows.length > 0 && <div className="card-body" style={{ paddingBottom: 0 }}><AlertBanner tone="info" title="Waiting for a fix">The caregiver corrects it in the app and sends it again. It comes back to “To review” when it’s fixed.</AlertBanner></div>}
         {rows.length === 0 ? <EmptyState icon={CheckCircle2} title={tab === 'To review' ? 'All finished visits are checked' : 'Nothing here'} text={tab === 'To review' ? 'New visits appear here when the caregiver checks out.' : tab === 'Sent back' ? 'No visits are waiting for a fix.' : 'Approved visits appear here.'} /> : <>
           <div className="table-wrap"><table className="tbl">
             <thead><tr>{tab === 'To review' && <th style={{ width: 36 }} />}<th>Visit</th><th>Caregiver</th><th>Planned</th><th>Recorded</th><th>{tab === 'Approved' ? 'Approved' : tab === 'Sent back' ? 'Why it was sent back' : 'To look at'}</th><th style={{ width: 30 }} /></tr></thead>
