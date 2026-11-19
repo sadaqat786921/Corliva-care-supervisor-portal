@@ -187,7 +187,7 @@ export default function VisitDetail() {
         s.log({ type: 'Visit approval', action: 'Sent a visit back to fix', record, reason }); s.toast(`Sent back to ${g?.name ?? 'the caregiver'} to fix. ${c.coordinator} has been told.`); setAct(null)
       }} />}
       {(act === 'correct' || act === 'adjust') && <CorrectModal v={v} adjust={act === 'adjust'} onClose={() => setAct(null)} />}
-      {act === 'keep' && <ReasonDialog title={`Keep ${g?.name} on this visit?`} text={`${g?.name} is not ready to work: ${g?.issue?.toLowerCase()}. Only a ${s.rules.overrideRoles.join(' or ')} can make this exception.`} label="Why is this safe?" confirm="Make exception" placeholder="For example: certificate renewed yesterday, HR is uploading it today" onClose={() => setAct(null)} onConfirm={keepAnyway} />}
+      {act === 'keep' && <ReasonDialog title={`Keep ${g?.name} on this visit?`} text={`${g?.name} is not ready to work: ${g?.issue?.toLowerCase()}. Only the Agency Admin or a Care Supervisor can make this exception.`} label="Why is this safe?" confirm="Make exception" placeholder="For example: certificate renewed yesterday, HR is uploading it today" onClose={() => setAct(null)} onConfirm={keepAnyway} />}
     </>
   )
 }
