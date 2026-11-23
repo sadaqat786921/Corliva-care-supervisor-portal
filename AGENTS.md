@@ -79,6 +79,7 @@ Every record opens on its **own full screen** with a back link to where you came
 ## Other roles
 - **HR Officer** — own portal: `sadaqat786921/Corliva-hr-officer-portal` (employment, requirements and checks, time off, ready to work; changes flag the caregiver's upcoming visits for the coordinator).
 - **Director of Nursing** — built in its own portal: `sadaqat786921/Corliva-don-portal` (can do everything a Care Supervisor does, for the whole agency, plus clients' health, quality and risk, staff reviews and training).
+- **Caregiver** — own portal: `sadaqat786921/corliva-caregiver-portal` (phone-friendly: their visits, check in and out, tasks, notes, sending the visit record, reporting a problem, sending documents to HR).
 
 ## Run
 ```
